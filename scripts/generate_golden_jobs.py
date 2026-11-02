@@ -1,0 +1,1441 @@
+"""
+Generates the 100-job ground-truth Golden Dataset for evaluation benchmarking.
+Includes:
+1. True Positives (Domain engineering matches with valid quotes and clear work modes)
+2. True Negatives (Sales, Recruiter, HR, Legal, Marketing, Facilities, Accounting)
+3. Ineligible Roles (ITAR/Citizenship restricted, unrequested Internships, Untargeted Countries)
+4. Closed/Expired Postings (Multilingual EN, DE, FR, NL, ES, IT expired notices)
+"""
+
+import json
+from pathlib import Path
+
+GOLDEN_JOBS = [
+    # -------------------------------------------------------------
+    # CATEGORY 1: TRUE POSITIVES (Relevant & Eligible Engineering Roles)
+    # -------------------------------------------------------------
+    {
+        "id": 1,
+        "title": "Senior RF Design Engineer",
+        "company": "NXP Semiconductors",
+        "location": "Eindhoven, Netherlands",
+        "description": "We are seeking a Senior RF Design Engineer to architect next-generation radar transceivers. The candidate will design RF front-ends, perform impedance matching, and execute lab characterization using vector network analyzers.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 2,
+        "title": "Hardware Systems Engineer (Hybrid)",
+        "company": "ASML",
+        "location": "Veldhoven, Netherlands",
+        "description": "Join our lithography electronics team. We operate a hybrid model with 3 days in the Veldhoven lab and 2 days remote. You will design multilayer high-speed PCBs, power distribution networks, and FPGA carrier boards.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "Hybrid",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 3,
+        "title": "Antenna & Phased Array Specialist",
+        "company": "Rohde & Schwarz",
+        "location": "Munich, Germany",
+        "description": "Design planar antenna arrays and beamforming networks for 5G test systems. Lab validation takes place in our RF anechoic chamber. Experience with EM simulation tools (CST or HFSS) is required.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 4,
+        "title": "Embedded Firmware Engineer - Remote",
+        "company": "Nordic Semiconductor",
+        "location": "Remote, Germany",
+        "description": "This is a 100% remote position open to candidates based in Germany. You will develop low-power BLE firmware in Embedded C and optimize RTOS drivers for ARM Cortex-M microcontrollers.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "Remote",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 5,
+        "title": "FPGA Verification Engineer",
+        "company": "Thales",
+        "location": "Paris, France",
+        "description": "Develop UVM testbenches and verify DSP algorithms on Xilinx UltraScale+ FPGAs for aerospace communications. Work takes place in our electronic systems laboratory in Paris.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 6,
+        "title": "PCB Layout and Hardware Validation Engineer",
+        "company": "Framework Computer",
+        "location": "Austin, TX",
+        "description": "Design compact, repairable high-density interconnect (HDI) motherboards. Perform board bring-up, oscilloscope signal integrity measurements, and DFM optimization with fabrication partners.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 7,
+        "title": "RF Microwave Engineer",
+        "company": "Analog Devices",
+        "location": "Limerick, Ireland",
+        "description": "Responsible for designing microwave integrated circuits and GaAs MMICs. You will collaborate with wafer fab teams and perform wafer-probe RF testing up to 40 GHz.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Ireland",
+        }
+    },
+    {
+        "id": 8,
+        "title": "Embedded Systems Developer",
+        "company": "Bosch",
+        "location": "Stuttgart, Germany",
+        "description": "Develop AUTOSAR compliant microcontroller software for automotive radar sensors. Practical experience with CAN/LIN protocols, C/C++, and hardware-in-the-loop (HIL) simulators is essential.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 9,
+        "title": "Digital Hardware Design Engineer (Hybrid)",
+        "company": "Arm",
+        "location": "Cambridge, United Kingdom",
+        "description": "We offer a flexible hybrid working environment with 2 days in office and 3 days remote. Design high-performance digital logic, RTL synthesizable Verilog, and evaluate timing closure.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "Hybrid",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 10,
+        "title": "Satellite Electronics Design Engineer",
+        "company": "Airbus Defence and Space",
+        "location": "Toulouse, France",
+        "description": "Design space-grade electronic power conditioning units and telemetry modules for satellite payloads. Perform radiation hardness evaluations and thermal-vacuum qualification.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 11,
+        "title": "RF Systems Integration Engineer",
+        "company": "Morse Micro",
+        "location": "Sydney, Australia",
+        "description": "Lead the RF test engineering and Wi-Fi HaLow SoC integration. Characterize EVM, phase noise, and sensitivity across semiconductor process corners.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Australia",
+        }
+    },
+    {
+        "id": 12,
+        "title": "Power Electronics Engineer",
+        "company": "Siemens",
+        "location": "Nuremberg, Germany",
+        "description": "Develop high-efficiency SiC and GaN inverter topologies for industrial drives. Conduct thermal simulation, gate driver design, and high-voltage compliance testing.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 13,
+        "title": "Senior Hardware Engineer - Avionics",
+        "company": "Lilium",
+        "location": "Munich, Germany",
+        "description": "Design DO-254 certifiable flight control computer hardware for electric aircraft. Experience with schematic capture in Altium, mixed-signal routing, and safety analysis.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 14,
+        "title": "Firmware & DSP Engineer (Remote)",
+        "company": "Dolby Laboratories",
+        "location": "Work from home, United Kingdom",
+        "description": "Fully remote role based in the UK. Implement low-latency audio processing algorithms in C++ and assembly for DSP chips and ARM NEON architectures.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "Remote",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 15,
+        "title": "Quantum Hardware Engineer",
+        "company": "QuantWare",
+        "location": "Delft, Netherlands",
+        "description": "Design microwave readout electronics and superconducting quantum processor packaging in our cryostat lab. Experience with high-frequency S-parameter characterization.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 16,
+        "title": "Wireless Hardware Validation Engineer",
+        "company": "Apple",
+        "location": "Munich, Germany",
+        "description": "Validate cellular and Wi-Fi transceivers across bands. Measure spurious emissions, desense, and SAR compliance in the Munich wireless design center.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 17,
+        "title": "Mixed-Signal ASIC Design Engineer",
+        "company": "Infineon Technologies",
+        "location": "Villach, Austria",
+        "description": "Design analog front-end circuits, ADCs/DACs, and bandgap references for power management ICs using Cadence Virtuoso and Spectre.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Austria",
+        }
+    },
+    {
+        "id": 18,
+        "title": "Embedded Linux Kernel Engineer",
+        "company": "Canonical",
+        "location": "Remote, Netherlands",
+        "description": "100% remote opportunity. Maintain device drivers, kernel board support packages (BSP), and hardware bring-up for RISC-V and ARM64 boards.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "Remote",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 19,
+        "title": "Robotics Electronics Hardware Engineer",
+        "company": "KUKA",
+        "location": "Augsburg, Germany",
+        "description": "Design servo drive controller boards, safety-critical emergency stop circuits, and industrial Ethernet (EtherCAT) interfaces for six-axis robotic arms.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 20,
+        "title": "Signal Integrity & Power Integrity Engineer",
+        "company": "Cisco Systems",
+        "location": "San Jose, CA",
+        "description": "Simulate 112G SerDes channels, 3D EM via transitions, and decoupling capacitor placement on large networking switch line cards using Ansys HFSS.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 21,
+        "title": "RF Application Engineer",
+        "company": "Mini-Circuits",
+        "location": "Surrey, United Kingdom",
+        "description": "Provide technical expertise to customers designing synthesizers, amplifiers, and filters. Assist with bench evaluations and reference design schematics.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 22,
+        "title": "Automotive Radar Hardware Engineer",
+        "company": "Continental",
+        "location": "Frankfurt, Germany",
+        "description": "Develop 77GHz mmWave radar sensor hardware modules. Perform antenna pattern calibration, radome transmission analysis, and environmental shock testing.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 23,
+        "title": "FPGA Hardware Acceleration Engineer",
+        "company": "CERN",
+        "location": "Geneva, Switzerland",
+        "description": "Implement real-time particle detector trigger logic in VHDL on modern FPGA clusters. Interface with multi-gigabit optical links and custom front-end ASICs.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Switzerland",
+        }
+    },
+    {
+        "id": 24,
+        "title": "Battery Management Systems (BMS) Hardware Engineer",
+        "company": "Northvolt",
+        "location": "Stockholm, Sweden",
+        "description": "Design high-voltage battery management electronics, isolated cell monitoring IC front-ends, and thermal runaway detection circuits.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Sweden",
+        }
+    },
+    {
+        "id": 25,
+        "title": "Senior Hardware Engineer - Medical Devices (Hybrid)",
+        "company": "Philips",
+        "location": "Eindhoven, Netherlands",
+        "description": "Hybrid schedule with 3 days on site. Design ultra-low-noise analog sensor acquisition boards and patient monitoring telemetry complying with IEC 60601-1.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "Hybrid",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 26,
+        "title": "Optical & Photonic Hardware Engineer",
+        "company": "Coherent",
+        "location": "Berlin, Germany",
+        "description": "Design laser driver circuits and high-speed photodiode transimpedance amplifiers. Perform optical spectrum analysis and thermal stabilization.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 27,
+        "title": "Audio Hardware Electronics Engineer",
+        "company": "Sennheiser",
+        "location": "Wedemark, Germany",
+        "description": "Design wireless headphone analog front-ends, low-jitter clocks, and miniature PCB assemblies with strict acoustic and EMC constraints.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 28,
+        "title": "IoT Hardware Firmware Engineer",
+        "company": "Particle",
+        "location": "Remote, United States",
+        "description": "Fully remote role. Write low-power cellular and Wi-Fi connectivity firmware for our IoT tracking hardware. C/C++ on FreeRTOS.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "Remote",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 29,
+        "title": "Instrumentation & Test Hardware Engineer",
+        "company": "National Instruments",
+        "location": "Munich, Germany",
+        "description": "Design automated RF test equipment fixtures, PXI instrument switching matrices, and lab calibration setups using Python and LabVIEW.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 30,
+        "title": "Defense Radar Systems Hardware Engineer",
+        "company": "Hensoldt",
+        "location": "Ulm, Germany",
+        "description": "Architect active electronically scanned array (AESA) radar hardware. Evaluate GaN power amplifier modules and beam steering electronics in our hardware lab.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 31,
+        "title": "Senior PCB Design Specialist",
+        "company": "Siemens EDA",
+        "location": "Leuven, Belgium",
+        "description": "Expert in high-density multilayer routing, rigid-flex design, and complex constraint managers in Xpedition or Altium. Lab verification support.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Belgium",
+        }
+    },
+    {
+        "id": 32,
+        "title": "Drone Avionics Hardware Engineer",
+        "company": "Wingcopter",
+        "location": "Weiterstadt, Germany",
+        "description": "Design lightweight power distribution boards, GPS/GNSS receiver modules, and redundant flight sensor electronics for delivery eVTOL drones.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 33,
+        "title": "Senior Microcontroller Applications Engineer",
+        "company": "Microchip Technology",
+        "location": "Lausanne, Switzerland",
+        "description": "Support customers with PIC32 and SAM microcontroller architectures, USB/Ethernet peripheral drivers, and hardware development kits.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Switzerland",
+        }
+    },
+    {
+        "id": 34,
+        "title": "Subsea Electronics Hardware Engineer",
+        "company": "Fugro",
+        "location": "Leidschendam, Netherlands",
+        "description": "Design pressure-tolerant electronic sensor pods, sonar telemetry interfaces, and subsea acoustic transducers for underwater exploration.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 35,
+        "title": "RF Test and Measurement Development Engineer",
+        "company": "Keysight Technologies",
+        "location": "Boeblingen, Germany",
+        "description": "Develop high-speed digitizer front-ends and vector signal generator fixtures. Execute linearity and harmonic distortion testing in our test lab.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+
+    # -------------------------------------------------------------
+    # CATEGORY 2: TRUE NEGATIVES (Non-Engineering / Non-Hardware Roles)
+    # -------------------------------------------------------------
+    {
+        "id": 36,
+        "title": "Talent Acquisition Specialist - Technical Recruiter",
+        "company": "ASML",
+        "location": "Veldhoven, Netherlands",
+        "description": "Responsible for end-to-end recruitment of engineering professionals across Europe. Screen candidate resumes, coordinate interview panels, and extend compensation offers.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 37,
+        "title": "Senior Corporate Legal Counsel",
+        "company": "NXP Semiconductors",
+        "location": "Eindhoven, Netherlands",
+        "description": "Provide legal guidance on cross-border commercial transactions, semiconductor IP licensing, patent disputes, and regulatory compliance.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 38,
+        "title": "Enterprise Account Executive - Technology Sales",
+        "company": "Salesforce",
+        "location": "Munich, Germany",
+        "description": "Drive enterprise software license sales, build sales pipeline, negotiate contracts with C-level executives, and hit quarterly revenue quotas.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 39,
+        "title": "Head of Global Brand Marketing",
+        "company": "Dyson",
+        "location": "Malmesbury, United Kingdom",
+        "description": "Lead international brand advertising campaigns, social media strategy, consumer market research, and creative agency relationships.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 40,
+        "title": "Facilities Operations Manager",
+        "company": "Infineon Technologies",
+        "location": "Dresden, Germany",
+        "description": "Manage cleanroom HVAC maintenance, building electrical safety systems, contractor logistics, and physical facility security audits.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 41,
+        "title": "Senior Financial Controller",
+        "company": "STMicroelectronics",
+        "location": "Geneva, Switzerland",
+        "description": "Oversee quarterly financial reporting under IFRS, budget variance analysis, cash flow forecasting, and statutory tax audits.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Switzerland",
+        }
+    },
+    {
+        "id": 42,
+        "title": "Customer Success Manager",
+        "company": "HubSpot",
+        "location": "Dublin, Ireland",
+        "description": "Manage client onboarding, increase customer retention rates, conduct quarterly business reviews, and drive software adoption.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Ireland",
+        }
+    },
+    {
+        "id": 43,
+        "title": "HR Business Partner",
+        "company": "Analog Devices",
+        "location": "Munich, Germany",
+        "description": "Partner with business unit directors on organizational design, employee relations, performance reviews, and retention strategies.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 44,
+        "title": "Executive Assistant to the CEO",
+        "company": "QuantWare",
+        "location": "Delft, Netherlands",
+        "description": "Coordinate complex international travel itineraries, board meeting preparation, expense reconciliation, and executive calendar management.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 45,
+        "title": "Procurement Buyer - Indirect Supplies",
+        "company": "Rohde & Schwarz",
+        "location": "Memmingen, Germany",
+        "description": "Negotiate supplier contracts for office furniture, travel providers, IT equipment, and manage purchasing purchase orders in SAP.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 46,
+        "title": "Content Copywriter & SEO Specialist",
+        "company": "Arduino",
+        "location": "Turin, Italy",
+        "description": "Write engaging blog posts, optimize website landing pages for search engines, and draft press releases for educational maker kits.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Italy",
+        }
+    },
+    {
+        "id": 47,
+        "title": "Corporate Compliance Officer",
+        "company": "Thales",
+        "location": "Paris, France",
+        "description": "Audit business units for adherence to anti-bribery regulations (FCPA / Sapin II), international trade sanctions, and code of ethics.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 48,
+        "title": "Workplace Receptionist & Office Coordinator",
+        "company": "Arm",
+        "location": "Cambridge, United Kingdom",
+        "description": "Greet office visitors, manage badge access control, handle incoming courier shipments, and organize cafeteria catering.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 49,
+        "title": "Sales Development Representative (SDR)",
+        "company": "Datadog",
+        "location": "Amsterdam, Netherlands",
+        "description": "Conduct outbound prospecting via cold calling, LinkedIn outreach, and qualifying inbound leads for enterprise monitoring software.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 50,
+        "title": "Digital Graphic Designer",
+        "company": "Framework Computer",
+        "location": "San Francisco, CA",
+        "description": "Create vector illustrations, product packaging artwork, UI banners, and social media creative assets in Adobe Illustrator and Figma.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 51,
+        "title": "Supply Chain Logistics Coordinator",
+        "company": "Bosch",
+        "location": "Stuttgart, Germany",
+        "description": "Track international freight shipments, clear customs import declarations, and coordinate pallet delivery schedules with trucking carriers.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 52,
+        "title": "Staff Accountant - Accounts Payable",
+        "company": "Siemens",
+        "location": "Erlangen, Germany",
+        "description": "Process vendor invoices, match purchase orders to receipts (3-way match), resolve supplier payment inquiries, and prepare ACH runs.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 53,
+        "title": "Event Marketing Coordinator",
+        "company": "Keysight Technologies",
+        "location": "London, United Kingdom",
+        "description": "Plan trade show booth logistics at European microwave and embedded conferences, manage vendor contracts, and coordinate booth staffing.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 54,
+        "title": "Paralegal - Patent & Intellectual Property",
+        "company": "Apple",
+        "location": "Munich, Germany",
+        "description": "Manage European Patent Office (EPO) filing deadlines, format patent disclosure documents, and maintain docketing records.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 55,
+        "title": "Technical Writer - Non-Engineering User Manuals",
+        "company": "Philips",
+        "location": "Eindhoven, Netherlands",
+        "description": "Draft patient quick-start guides, medical device cleaning instructions, and multilingual warranty inserts in plain English.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 56,
+        "title": "Learning & Development Specialist",
+        "company": "Airbus",
+        "location": "Toulouse, France",
+        "description": "Design employee onboarding training modules, administer our corporate Learning Management System (LMS), and facilitate workshops.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 57,
+        "title": "Public Relations & Media Manager",
+        "company": "Northvolt",
+        "location": "Stockholm, Sweden",
+        "description": "Draft company press statements, manage journalist inquiries during factory milestones, and prep spokespeople for broadcast interviews.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Sweden",
+        }
+    },
+    {
+        "id": 58,
+        "title": "Payroll Administrator",
+        "company": "Lilium",
+        "location": "Munich, Germany",
+        "description": "Process monthly German payroll, calculate social security deductions, manage maternity leave records, and interface with health insurance funds.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 59,
+        "title": "Customer Support Representative (German & English)",
+        "company": "Particle",
+        "location": "Berlin, Germany",
+        "description": "Answer tier-1 ticket inquiries regarding hardware shipping times, billing questions, and warranty replacements via Zendesk.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 60,
+        "title": "Corporate Real Estate Portfolio Analyst",
+        "company": "Cisco Systems",
+        "location": "Amsterdam, Netherlands",
+        "description": "Analyze commercial lease costs across EMEA regional offices, negotiate lease renewals, and model space utilization efficiency.",
+        "ground_truth": {
+            "is_relevant": False,
+            "is_eligible": False,
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+
+    # -------------------------------------------------------------
+    # CATEGORY 3: INELIGIBLE ROLES (Clearance/ITAR, Internships, Country)
+    # -------------------------------------------------------------
+    {
+        "id": 61,
+        "title": "Missile Defense RF Engineer - Active Secret Clearance",
+        "company": "Raytheon",
+        "location": "Tucson, AZ",
+        "description": "Design seeker antenna arrays for radar-guided interceptors. Must hold an active DoD Secret Security Clearance. US Citizenship is strictly required. No visa sponsorship provided.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Fails clearance & visa filter for candidate needing sponsorship
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 62,
+        "title": "Avionics Hardware Engineer (ITAR / US Person Required)",
+        "company": "SpaceX",
+        "location": "Hawthorne, CA",
+        "description": "Develop telemetry flight hardware for Falcon rockets. To conform to U.S. Government export regulations (ITAR), applicant must be a U.S. citizen, lawful permanent resident (Green Card holder), or protected individual.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # ITAR / US Person restriction
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 63,
+        "title": "National Defense RF Hardware Specialist - DV Clearance",
+        "company": "BAE Systems",
+        "location": "Chelmsford, United Kingdom",
+        "description": "Design secure electronic countermeasure antennas. Due to the classified nature of this role, candidates must be UK Nationals eligible for Developed Vetting (DV) clearance. Dual nationality or foreign sponsorship cannot be considered.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # UK citizenship / clearance restriction
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 64,
+        "title": "Classified Hardware Security Engineer - TS/SCI",
+        "company": "Lockheed Martin",
+        "location": "Littleton, CO",
+        "description": "Perform hardware vulnerability analysis on defense satellite payloads. Current Active Top Secret / SCI clearance required. US Citizenship required.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # TS/SCI clearance
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 65,
+        "title": "Working Student - RF Laboratory Assistant (Werkstudent)",
+        "company": "Rohde & Schwarz",
+        "location": "Munich, Germany",
+        "description": "Wir suchen einen Werkstudenten (m/w/d) im Bereich Hochfrequenztechnik für 15-20 Stunden pro Woche. Immatrikulierte Studenten der Elektrotechnik unterstützen bei Messungen im Prüffeld.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Unrequested internship/working student
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 66,
+        "title": "Summer 2026 Hardware Engineering Intern",
+        "company": "Apple",
+        "location": "Cupertino, CA",
+        "description": "Join our 12-week summer internship program. Open strictly to students currently enrolled in a BS/MS Electrical Engineering program returning to university in Autumn 2026.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Internship
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 67,
+        "title": "Graduate Trainee - Electronics Engineering Scheme",
+        "company": "Rolls-Royce",
+        "location": "Derby, United Kingdom",
+        "description": "Our two-year rotational graduate scheme is designed for recent university graduates with less than one year of experience. Develop skills across turbomachinery instrumentation.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Graduate scheme
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United Kingdom",
+        }
+    },
+    {
+        "id": 68,
+        "title": "Stage PFE - Conception RF et Antennes (Internship)",
+        "company": "Thales",
+        "location": "Toulouse, France",
+        "description": "Sujet de stage de fin d'études (PFE) d'une durée de 6 mois pour étudiant en dernière année d'école d'ingénieurs. Modélisation sous HFSS et mesures sous chambre anéchoïque.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Stage PFE / Internship
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 69,
+        "title": "Senior Hardware Engineer - On-site China Operations",
+        "company": "Dyson",
+        "location": "Shenzhen, China",
+        "description": "Oversee PCB manufacturing bring-up and factory test yield at contract manufacturing sites in Shenzhen. Fluency in Mandarin and local Chinese residency required.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Country not in candidate target countries
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "China",
+        }
+    },
+    {
+        "id": 70,
+        "title": "RF Validation Specialist - On-site India Design Center",
+        "company": "Analog Devices",
+        "location": "Bangalore, India",
+        "description": "Execute characterization on analog transceivers at our Bangalore campus. On-site role in Karnataka, India.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Country not in candidate target countries
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "India",
+        }
+    },
+    {
+        "id": 71,
+        "title": "Hardware Development Lead - Tokyo Lab",
+        "company": "Sony",
+        "location": "Tokyo, Japan",
+        "description": "Lead imaging sensor board bring-up on site in Shinagawa, Tokyo. Native or JLPT N1 Japanese proficiency required.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Japan not in target countries
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Japan",
+        }
+    },
+    {
+        "id": 72,
+        "title": "Electronics Assembly Support - Johor Bahru",
+        "company": "Dyson",
+        "location": "Johor Bahru, Malaysia",
+        "description": "Support daily production line troubleshooting at our manufacturing plant in Johor Bahru. Full-time on site in Malaysia.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Malaysia not in target countries
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Malaysia",
+        }
+    },
+    {
+        "id": 73,
+        "title": "Autonomous Weapons Hardware Lead - US Secret Required",
+        "company": "Anduril Industries",
+        "location": "Costa Mesa, CA",
+        "description": "Design custom computing pods for tactical air vehicles. Applicant must possess an active U.S. Secret Security Clearance. No visa sponsorship available.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Clearance required
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 74,
+        "title": "Embedded Hardware Intern - Fall 2026 Co-op",
+        "company": "Tesla",
+        "location": "Palo Alto, CA",
+        "description": "Full-time student co-op position for Autumn 2026. Design test benches for vehicle gateway controllers. Must be enrolled in an accredited degree program.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Co-op / Internship
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 75,
+        "title": "Defense Radar Antenna Engineer - ITAR Controlled",
+        "company": "Northrop Grumman",
+        "location": "Linthicum, MD",
+        "description": "Design airborne radar antennas. Candidates must be a US Citizen and possess or be able to obtain a DoD Secret clearance under ITAR regulations.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # ITAR / Citizenship
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 76,
+        "title": "RF Engineering Trainee (6-month contract)",
+        "company": "Vodafone",
+        "location": "Düsseldorf, Germany",
+        "description": "Befristetes Traineeprogramm für Absolventen der Elektrotechnik. Unterstützung bei der Funknetzplanung und Messfahrten für das 5G-Mobilfunknetz.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Trainee
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 77,
+        "title": "Semiconductor Test Engineer - Hsinchu Fab",
+        "company": "TSMC",
+        "location": "Hsinchu, Taiwan",
+        "description": "Perform automatic test equipment (ATE) vector testing on 3nm wafer lots. On-site position in Hsinchu Science Park, Taiwan.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Taiwan not in target countries
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Taiwan",
+        }
+    },
+    {
+        "id": 78,
+        "title": "Crypto Hardware Engineer - Top Secret Clearance Required",
+        "company": "General Dynamics",
+        "location": "Scottsdale, AZ",
+        "description": "Design NSA Type 1 cryptographic hardware devices. Candidate must hold an active Top Secret SCI security clearance and be a US Citizen.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Top Secret clearance
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 79,
+        "title": "Electronics Engineering Apprentice (Ausbildung)",
+        "company": "Zeiss",
+        "location": "Jena, Germany",
+        "description": "Duale Berufsausbildung zum Elektroniker für Geräte und Systeme (m/w/d). Erlernen von Schaltplanerstellung, Löten und Funktionsprüfungen.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Apprentice / Ausbildung
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 80,
+        "title": "Space Electronics Lead - São José dos Campos",
+        "company": "Embraer",
+        "location": "São José dos Campos, Brazil",
+        "description": "Design regional jet flight deck electronics on site in Brazil. Portuguese fluency required.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": False,  # Brazil not in target countries
+            "is_open": True,
+            "expected_work_mode": "On-site",
+            "expected_country": "Brazil",
+        }
+    },
+
+    # -------------------------------------------------------------
+    # CATEGORY 4: CLOSED / EXPIRED POSTINGS (Multilingual Still-Open Tests)
+    # -------------------------------------------------------------
+    {
+        "id": 81,
+        "title": "RF Systems Architect (Closed)",
+        "company": "ASML",
+        "location": "Veldhoven, Netherlands",
+        "description": "Thank you for your interest. This position has been filled and applications are no longer being accepted.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed EN
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 82,
+        "title": "Antenna Design Engineer (Expired)",
+        "company": "Rohde & Schwarz",
+        "location": "Munich, Germany",
+        "description": "Diese Stelle ist nicht mehr verfügbar. Die Stellenausschreibung wurde beendet. Bitte besuchen Sie unsere Karriereseite für aktuelle Angebote.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed DE
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 83,
+        "title": "Ingénieur Électronique Embarquée (Pourvu)",
+        "company": "Thales",
+        "location": "Paris, France",
+        "description": "Cette offre d'emploi n'est plus disponible. Le poste est désormais pourvu. Nous vous remercions pour votre intérêt.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed FR
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 84,
+        "title": "Hardware Ontwerper (Gesloten)",
+        "company": "NXP Semiconductors",
+        "location": "Eindhoven, Netherlands",
+        "description": "Deze vacature is gesloten en niet meer beschikbaar voor nieuwe sollicitaties.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed NL
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 85,
+        "title": "Ingeniero de Microondas RF (Cubierta)",
+        "company": "Indra",
+        "location": "Madrid, Spain",
+        "description": "Esta oferta de empleo ya no está disponible. La vacante ha sido cubierta.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed ES
+            "expected_work_mode": "On-site",
+            "expected_country": "Spain",
+        }
+    },
+    {
+        "id": 86,
+        "title": "Ingegnere Elettronico Hardware (Chiusa)",
+        "company": "Leonardo",
+        "location": "Rome, Italy",
+        "description": "Questa posizione non è più disponibile. Le candidature sono chiuse.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed IT
+            "expected_work_mode": "On-site",
+            "expected_country": "Italy",
+        }
+    },
+    {
+        "id": 87,
+        "title": "Senior PCB Validation Engineer",
+        "company": "Formlabs",
+        "location": "Somerville, MA",
+        "description": "The job you are looking for has expired or is no longer active. Check back soon for new opportunities.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed EN
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+    {
+        "id": 88,
+        "title": "Embedded Firmware Developer",
+        "company": "Nordic Semiconductor",
+        "location": "Berlin, Germany",
+        "description": "Die gesuchte Position ist leider abgelaufen und wurde geschlossen.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed DE
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 89,
+        "title": "Ingénieur Hyperfréquences",
+        "company": "Airbus",
+        "location": "Toulouse, France",
+        "description": "Ce recrutement est clos. Aucun nouveau dossier ne sera examiné pour cette annonce.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed FR
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 90,
+        "title": "FPGA Specialist",
+        "company": "ASML",
+        "location": "Veldhoven, Netherlands",
+        "description": "Solliciteren op deze functie is helaas niet meer mogelijk. De vacature is verlopen.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed NL
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 91,
+        "title": "Ingeniero de Firmware Embebido",
+        "company": "Siemens",
+        "location": "Seville, Spain",
+        "description": "El plazo de inscripción para esta vacante ha finalizado. Oferta cerrada.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed ES
+            "expected_work_mode": "On-site",
+            "expected_country": "Spain",
+        }
+    },
+    {
+        "id": 92,
+        "title": "Progettista Elettronico RF",
+        "company": "Elettronica Group",
+        "location": "Rome, Italy",
+        "description": "L'annuncio di lavoro è scaduto e non accetta più nuove manifestazioni di interesse.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed IT
+            "expected_work_mode": "On-site",
+            "expected_country": "Italy",
+        }
+    },
+    {
+        "id": 93,
+        "title": "Wireless Hardware Lead",
+        "company": "Apple",
+        "location": "Munich, Germany",
+        "description": "We are no longer accepting applications for this requisition. Thank you.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed EN
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 94,
+        "title": "Hochfrequenzentwickler",
+        "company": "Bosch",
+        "location": "Stuttgart, Germany",
+        "description": "Vielen Dank für Ihr Interesse. Dieser Bewerbungsprozess ist abgeschlossen.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed DE
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 95,
+        "title": "Concepteur Cartes Électroniques",
+        "company": "Safran",
+        "location": "Massy, France",
+        "description": "L'offre à laquelle vous tentez d'accéder a expiré.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed FR
+            "expected_work_mode": "On-site",
+            "expected_country": "France",
+        }
+    },
+    {
+        "id": 96,
+        "title": "RF Test Engineer (Expired Notice)",
+        "company": "QuantWare",
+        "location": "Delft, Netherlands",
+        "description": "Position filled. Please view our careers overview for other exciting roles.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed EN
+            "expected_work_mode": "On-site",
+            "expected_country": "Netherlands",
+        }
+    },
+    {
+        "id": 97,
+        "title": "Ingeniero de Telecomunicaciones RF",
+        "company": "Telefónica",
+        "location": "Madrid, Spain",
+        "description": "El proceso de selección para este puesto ha concluido satisfactoriamente.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed ES
+            "expected_work_mode": "On-site",
+            "expected_country": "Spain",
+        }
+    },
+    {
+        "id": 98,
+        "title": "Sviluppatore Firmware C/C++",
+        "company": "STMicroelectronics",
+        "location": "Agrate Brianza, Italy",
+        "description": "La selezione per la posizione richiesta è terminata.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed IT
+            "expected_work_mode": "On-site",
+            "expected_country": "Italy",
+        }
+    },
+    {
+        "id": 99,
+        "title": "Radar DSP Firmware Engineer",
+        "company": "Hensoldt",
+        "location": "Ulm, Germany",
+        "description": "Diese Ausschreibung ist beendet und nicht mehr aktiv.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed DE
+            "expected_work_mode": "On-site",
+            "expected_country": "Germany",
+        }
+    },
+    {
+        "id": 100,
+        "title": "Signal Integrity Specialist",
+        "company": "Cisco",
+        "location": "San Jose, CA",
+        "description": "We are sorry, but this job posting is no longer available.",
+        "ground_truth": {
+            "is_relevant": True,
+            "is_eligible": True,
+            "is_open": False,  # Closed EN
+            "expected_work_mode": "On-site",
+            "expected_country": "United States",
+        }
+    },
+]
+
+
+def write_golden_dataset(output_path: str = "tests/golden/golden_jobs.json"):
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(GOLDEN_JOBS, f, indent=2, ensure_ascii=False)
+    print(f"Successfully generated {len(GOLDEN_JOBS)} golden benchmark jobs at: {output_path}")
+
+
+if __name__ == "__main__":
+    write_golden_dataset()

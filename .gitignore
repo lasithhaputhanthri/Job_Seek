@@ -1,0 +1,46 @@
+# Secrets & environment
+.env
+.env.*
+!.env.example
+
+# Database and state files
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.db-*
+data/backups/
+data/exports/
+
+# Personal candidate data & CVs
+data/cv.*
+data/profile.json
+
+# Scratch & temporary logs
+scratch/
+*.log
+*.tmp
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Distribution & builds
+build/
+dist/
+*.egg-info/

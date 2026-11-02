@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-seek"
+version = "2.0.0"
+description = "Candidate-Agnostic Multi-Agent Job Hunting and Verification System"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Job Seek Engineering Team"}
+]
+dependencies = [
+    "pydantic>=2.10.0",
+    "google-genai>=2.34.0",
+    "openpyxl>=3.1.5",
+    "httpx>=0.28.0",
+    "beautifulsoup4>=4.12.0",
+    "python-dotenv>=1.0.0",
+    "pypdf>=5.0.0",
+    "python-docx>=1.1.0",
+    "mcp>=2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+jobseek = "src.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"

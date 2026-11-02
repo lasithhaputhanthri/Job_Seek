@@ -1,0 +1,49 @@
+{
+  "$schema": "https://a2a-standard.org/schemas/agent-card-v1.json",
+  "agent_id": "urn:agent:contact-finder-v1",
+  "name": "Public Hiring Contact Discovery Agent",
+  "description": "Autonomous worker agent specializing in scraping, validating, and extracting publicly listed recruiting and careers email contacts with verifiable source URLs.",
+  "version": "1.0.0",
+  "author": "JobSeek System",
+  "capabilities": [
+    {
+      "name": "find_hiring_contacts",
+      "description": "Discovers publicly listed recruitment, careers, and talent contacts for a company domain.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "domain": { "type": "string", "description": "Company domain, e.g. 'anduril.com'" },
+          "company_name": { "type": "string", "description": "Official company name" }
+        },
+        "required": ["domain", "company_name"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "email": { "type": "string" },
+                "role_department": { "type": "string" },
+                "source_url": { "type": "string" }
+              },
+              "required": ["email", "source_url"]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "endpoints": {
+    "http_jsonrpc": "http://127.0.0.1:8765/rpc",
+    "health_check": "http://127.0.0.1:8765/health"
+  },
+  "guardrails": {
+    "anti_scraping_compliance": true,
+    "strict_evidence_rule": true,
+    "pii_filtering": true
+  }
+}
